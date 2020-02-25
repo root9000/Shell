@@ -9,7 +9,7 @@ ss_v2ray_ws_http_link(){
     local link_head="ss://"
     local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
     local ip_port_plugin="@$(get_ip):${shadowsocksport}/?plugin=${plugin_client_name}"
-    local plugin_opts=""
+    local plugin_opts=$(get_str_replace ";host=${domain};path=${path};mux=${mux}")
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
@@ -17,7 +17,7 @@ ss_v2ray_ws_tls_cdn_link(){
     local link_head="ss://"
     local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
     local ip_port_plugin="@${domain}:${shadowsocksport}/?plugin=${plugin_client_name}"
-    local plugin_opts=$(get_str_replace ";tls;host=${domain}")
+    local plugin_opts=$(get_str_replace ";tls;host=${domain};path=${path};mux=${mux}")
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
@@ -25,7 +25,7 @@ ss_v2ray_quic_tls_cdn_link(){
     local link_head="ss://"
     local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
     local ip_port_plugin="@${domain}:${shadowsocksport}/?plugin=${plugin_client_name}"
-    local plugin_opts=$(get_str_replace ";mode=quic;host=${domain}")
+    local plugin_opts=$(get_str_replace ";mode=quic;host=${domain};mux=${mux}")
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
@@ -33,7 +33,7 @@ ss_v2ray_ws_tls_web_link(){
     local link_head="ss://"
     local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
     local ip_port_plugin="@${domain}:443/?plugin=${plugin_client_name}"    
-    local plugin_opts=$(get_str_replace ";tls;host=${domain};path=${path}")
+    local plugin_opts=$(get_str_replace ";tls;host=${domain};path=${path};mux=${mux}")
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
@@ -41,7 +41,7 @@ ss_v2ray_ws_tls_web_cdn_link(){
     local link_head="ss://"
     local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
     local ip_port_plugin="@${domain}:443/?plugin=${plugin_client_name}"    
-    local plugin_opts=$(get_str_replace ";tls;host=${domain};path=${path}")
+    local plugin_opts=$(get_str_replace ";tls;host=${domain};path=${path};mux=${mux}")
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
@@ -91,10 +91,34 @@ ss_cloak_link_new(){
     local link_head="ss://"
     local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
     local ip_port_plugin="@$(get_ip):443/?plugin=${plugin_client_name}"    
-    local plugin_opts=$(get_str_replace ";Transport=direct;ProxyMethod=shadowsocks;EncryptionMethod=plain;UID=${ckauid};PublicKey=${ckpub};ServerName=${domain};NumConn=4;BrowserSig=chrome;StreamTimeout=300")
+    local plugin_opts=$(get_str_replace ";Transport=direct;ProxyMethod=shadowsocks;EncryptionMethod=${encryptionMethod};UID=${ckauid};PublicKey=${ckpub};ServerName=${domain};NumConn=4;BrowserSig=chrome;StreamTimeout=300")
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
+# ss + mos-tls-tunnel
+ss_mtt_tls_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    local ip_port_plugin="@$(get_ip):${shadowsocksport}/?plugin=${plugin_client_name}"
+    if [[ ${isEnable} == disable ]]; then
+        local plugin_opts=$(get_str_replace ";sv;n=${serverName}")
+    elif [[ ${isEnable} == enable ]]; then
+        local plugin_opts=$(get_str_replace ";sv;n=${serverName};mux")
+    fi
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
+}
+
+ss_mtt_wss_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    local ip_port_plugin="@$(get_ip):${shadowsocksport}/?plugin=${plugin_client_name}"
+    if [[ ${isEnable} == disable ]]; then
+        local plugin_opts=$(get_str_replace ";sv;wss;wss-path=${wssPath};n=${serverName}")
+    elif [[ ${isEnable} == enable ]]; then
+        local plugin_opts=$(get_str_replace ";sv;wss;wss-path=${wssPath};n=${serverName};mux;mux-max-stream=${muxMaxStream}")
+    fi
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
+}
 
 
 

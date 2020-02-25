@@ -50,8 +50,10 @@ shadowsocks_uninstall(){
     # uninstall ss-rust
     rm -f /usr/local/bin/ssserver
     rm -f /usr/local/bin/sslocal
-    rm -f /usr/local/bin/ssdns
+    rm -f /usr/local/bin/sstunnel
     rm -f /usr/local/bin/ssurl
+    rm -f /usr/local/bin/ssmanager
+    rm -f /usr/local/bin/ssredir
     rm -f ${SHADOWSOCKS_RUST_INIT}
 }
 
@@ -126,6 +128,14 @@ cloak_uninstall(){
     rm -f /usr/local/bin/ck-client
     rm -f ${CLOAK_INIT}
     rm -fr $(dirname ${CK_CLIENT_CONFIG}) > /dev/null 2>&1
+}
+
+mtt_uninstall(){
+    ps -ef |grep -v grep | grep mtt-server |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+    
+    # uninstall mos-tls-tunnel
+    rm -f /var/run/mos-tls-tunnel.pid
+    rm -f /usr/local/bin/mtt-server
 }
 
 caddy_uninstall(){

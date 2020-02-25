@@ -29,7 +29,7 @@ ss_v2ray_ws_http_config(){
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
-	    "plugin_opts":"server"
+	    "plugin_opts":"server;host=${domain};path=${path};mux=${mux}"
 	}
 	EOF
 }
@@ -47,7 +47,7 @@ ss_v2ray_ws_tls_cdn_config(){
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
-	    "plugin_opts":"server;tls;host=${domain};cert=${cerpath};key=${keypath}"
+	    "plugin_opts":"server;tls;host=${domain};cert=${cerpath};key=${keypath};path=${path};mux=${mux}"
 	}
 	EOF
 }
@@ -66,7 +66,7 @@ ss_v2ray_quic_tls_cdn_config(){
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_only",
 	    "plugin":"v2ray-plugin",
-	    "plugin_opts":"server;mode=quic;host=${domain};cert=${cerpath};key=${keypath}"
+	    "plugin_opts":"server;mode=quic;host=${domain};cert=${cerpath};key=${keypath};mux=${mux}"
 	}
 	EOF
 }
@@ -84,7 +84,7 @@ ss_v2ray_ws_tls_web_config(){
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
-	    "plugin_opts":"server;path=${path}"
+	    "plugin_opts":"server;path=${path};mux=${mux}"
 	}
 	EOF
 }
@@ -119,7 +119,7 @@ ss_v2ray_ws_tls_web_cdn_config(){
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
-	    "plugin_opts":"server;path=${path}"
+	    "plugin_opts":"server;path=${path};mux=${mux}"
 	}
 	EOF
 }
@@ -303,13 +303,50 @@ cloak2_client_config(){
 	{
 	    "Transport":"direct",
 	    "ProxyMethod":"shadowsocks",
-	    "EncryptionMethod":"plain",
+	    "EncryptionMethod":"${encryptionMethod}",
 	    "UID":"${ckauid}",
 	    "PublicKey":"${ckpub}",
 	    "ServerName":"${domain}",
 	    "NumConn":4,
 	    "BrowserSig":"chrome",
 	    "StreamTimeout":300
+	}
+	EOF
+}
+
+# mos_tls_tunnel
+ss_mtt_tls_config(){
+	cat > ${SHADOWSOCKS_CONFIG}<<-EOF
+	{
+	    "server":${server_value},
+	    "server_port":${shadowsocksport},
+	    "password":"${shadowsockspwd}",
+	    "timeout":300,
+	    "user":"nobody",
+	    "method":"${shadowsockscipher}",
+	    "fast_open":${fast_open},
+	    "nameserver":"8.8.8.8",
+	    "mode":"tcp_only",
+	    "plugin":"mtt-server",
+	    "plugin_opts":"n=${serverName}"
+	}
+	EOF
+}
+
+ss_mtt_wss_config(){
+	cat > ${SHADOWSOCKS_CONFIG}<<-EOF
+	{
+	    "server":${server_value},
+	    "server_port":${shadowsocksport},
+	    "password":"${shadowsockspwd}",
+	    "timeout":300,
+	    "user":"nobody",
+	    "method":"${shadowsockscipher}",
+	    "fast_open":${fast_open},
+	    "nameserver":"8.8.8.8",
+	    "mode":"tcp_only",
+	    "plugin":"mtt-server",
+	    "plugin_opts":"wss;wss-path=${wssPath};n=${serverName}"
 	}
 	EOF
 }
