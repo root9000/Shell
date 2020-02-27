@@ -6,7 +6,7 @@ export PATH
 
 # shell version
 # ====================
-SHELL_VERSION="2.3.6"
+SHELL_VERSION="2.3.7"
 # ====================
 
 
@@ -63,7 +63,7 @@ LIBSODIUM_VERSION="1.0.18"
 LIBSODIUM_FILE="libsodium-${LIBSODIUM_VERSION}"
 LIBSODIUM_URL="https://github.com/jedisct1/libsodium/releases/download/${LIBSODIUM_VERSION}-RELEASE/libsodium-${LIBSODIUM_VERSION}.tar.gz"
 
-MBEDTLS_VERSION="2.16.3"
+MBEDTLS_VERSION="2.16.5"
 MBEDTLS_FILE="mbedtls-${MBEDTLS_VERSION}"
 MBEDTLS_URL="https://tls.mbed.org/download/mbedtls-${MBEDTLS_VERSION}-gpl.tgz"
 
@@ -1003,6 +1003,10 @@ config_ss(){
                 mirror_domain=$(echo ${mirror_site} | sed 's/https:\/\///g')
                 nginx_config
             fi 
+        fi
+        # disable mux
+        if [[ ${isDisable} == disable ]] && [[ ${libev_v2ray} != "3" ]]; then
+            sed 's/"plugin_opts":"/"plugin_opts":"mux=0;/' -i ${SHADOWSOCKS_CONFIG}
         fi
     elif [[ ${plugin_num} == "2" ]]; then
         if [ ! -d "$(dirname ${KCPTUN_CONFIG})" ]; then
