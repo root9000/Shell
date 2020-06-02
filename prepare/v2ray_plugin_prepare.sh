@@ -1,3 +1,13 @@
+# v2ray-plugin Transport mode
+V2RAY_PLUGIN_TRANSPORT_MODE=(
+ws+http
+ws+tls+[cdn]
+quic+tls+[cdn]
+ws+tls+web
+ws+tls+web+cdn
+)
+
+
 intall_acme_tool(){
     # Install certificate generator tools
     if [ ! -e ~/.acme.sh/acme.sh ]; then
@@ -18,7 +28,7 @@ intall_acme_tool(){
 transport_mode_menu(){
     while true
     do
-        echo -e "请为v2ray-plugin选择 Transport mode\n"
+        echo && echo -e "请为v2ray-plugin选择 Transport mode\n"
         for ((i=1;i<=${#V2RAY_PLUGIN_TRANSPORT_MODE[@]};i++ )); do
             hint="${V2RAY_PLUGIN_TRANSPORT_MODE[$i-1]}"
             echo -e "${Green}  ${i}.${suffix} ${hint}"
@@ -165,19 +175,26 @@ is_cdn_proxied(){
     local ipcalc_install_path="/usr/local/bin/ipcalc-0.41"
     local ipcalc_download_url="http://jodies.de/ipcalc-archive/ipcalc-0.41/ipcalc"
     
-    if [ ! -e ${ipcalc_install_path} ]; then
-        wget --no-check-certificate -q -c -t3 -T60 -O ${ipcalc_install_path} ${ipcalc_download_url}
-        if [ $? -ne 0 ]; then
-            echo -e "${Red}[Error]${suffix} Dependency package ipcalc download failed."
-            exit 1
+    if centosversion 8; then
+        local ipcalcName='ipcalc'
+    else
+        local ipcalcName='ipcalc-0.41'
+
+        if [ ! -e ${ipcalc_install_path} ]; then
+            wget --no-check-certificate -q -c -t3 -T60 -O ${ipcalc_install_path} ${ipcalc_download_url}
+            if [ $? -ne 0 ]; then
+                echo -e "${Red}[Error]${suffix} Dependency package ipcalc download failed."
+                exit 1
+            fi
+            chmod +x ${ipcalc_install_path}
+            [ -f ${ipcalc_install_path} ] && ln -fs ${ipcalc_install_path} /usr/bin
         fi
-        chmod +x ${ipcalc_install_path}
     fi
 
     for MASK in ${ipv4_text_list[@]}
     do
-        min=`ipcalc-0.41 $MASK|awk '/HostMin:/{print $2}'`
-        max=`ipcalc-0.41 $MASK|awk '/HostMax:/{print $2}'`
+        min=`$ipcalcName $MASK|awk '/HostMin:/{print $2}'`
+        max=`$ipcalcName $MASK|awk '/HostMax:/{print $2}'`
         MIN=`echo $min|awk -F"." '{printf"%.0f",$1*256*256*256+$2*256*256+$3*256+$4}'`
         MAX=`echo $max|awk -F"." '{printf"%.0f",$1*256*256*256+$2*256*256+$3*256+$4}'`
         IPvalue=`echo $IP|awk -F"." '{printf"%.0f",$1*256*256*256+$2*256*256+$3*256+$4}'`

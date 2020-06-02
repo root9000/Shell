@@ -108,6 +108,18 @@ ss_mtt_tls_link(){
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
+ss_mtt_tls_dns_only_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    local ip_port_plugin="@$(get_ip):${shadowsocksport}/?plugin=${plugin_client_name}"
+    if [[ ${isEnable} == disable ]]; then
+        local plugin_opts=$(get_str_replace ";n=${serverName}")
+    elif [[ ${isEnable} == enable ]]; then
+        local plugin_opts=$(get_str_replace ";n=${serverName};mux")
+    fi
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
+}
+
 ss_mtt_wss_link(){
     local link_head="ss://"
     local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
@@ -120,6 +132,75 @@ ss_mtt_wss_link(){
     ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
 }
 
+ss_mtt_wss_dns_only_or_cdn_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    if [[ ${domainType} = DNS-Only ]]; then
+        local ip_port_plugin="@$(get_ip):${shadowsocksport}/?plugin=${plugin_client_name}"
+    elif [[ ${domainType} = CDN ]]; then
+        local ip_port_plugin="@${serverName}:${shadowsocksport}/?plugin=${plugin_client_name}"
+    fi
+    if [[ ${isEnable} == disable ]]; then
+        local plugin_opts=$(get_str_replace ";wss;wss-path=${wssPath};n=${serverName}")
+    elif [[ ${isEnable} == enable ]]; then
+        local plugin_opts=$(get_str_replace ";wss;wss-path=${wssPath};n=${serverName};mux;mux-max-stream=${muxMaxStream}")
+    fi
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
+}
+
+ss_mtt_wss_dns_only_or_cdn_web_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    if [[ ${domainType} = DNS-Only ]]; then
+        local ip_port_plugin="@$(get_ip):443/?plugin=${plugin_client_name}"
+    elif [[ ${domainType} = CDN ]]; then
+        local ip_port_plugin="@${serverName}:443/?plugin=${plugin_client_name}"
+    fi
+    if [[ ${isEnable} == disable ]]; then
+        local plugin_opts=$(get_str_replace ";wss;wss-path=${wssPath};n=${serverName}")
+    elif [[ ${isEnable} == enable ]]; then
+        local plugin_opts=$(get_str_replace ";wss;wss-path=${wssPath};n=${serverName};mux;mux-max-stream=${muxMaxStream}")
+    fi
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
+}
+
+# ss + rabbit-tcp
+ss_rabbit_tcp_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    local ip_port_plugin="@$(get_ip):${listen_port}/?plugin=${plugin_client_name}"    
+    local plugin_opts=$(get_str_replace ";serviceAddr=$(get_ip):${shadowsocksport};password=${rabbitKey};tunnelN=4")
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"    
+}
+
+# ss + simple-tls
+ss_simple_tls_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    local ip_port_plugin="@$(get_ip):443/?plugin=${plugin_client_name}"
+    if [[ ${domainType} = DNS-Only ]]; then
+        local plugin_opts=$(get_str_replace ";n=${serverName}")
+    elif [[ ${domainType} = Other ]]; then
+        local plugin_opts=$(get_str_replace ";n=${serverName};cca=${base64Cert}")
+    fi
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
+}
+
+ss_simple_tls_wss_link(){
+    local link_head="ss://"
+    local cipher_pwd=$(get_str_base64_encode "${shadowsockscipher}:${shadowsockspwd}")
+    if [[ ${domainType} = CDN ]]; then
+        local ip_port_plugin="@${serverName}:443/?plugin=${plugin_client_name}"
+    else
+        local ip_port_plugin="@$(get_ip):443/?plugin=${plugin_client_name}"
+    fi
+    if [[ ${domainType} = DNS-Only ]] || [[ ${domainType} = CDN ]]; then
+        local plugin_opts=$(get_str_replace ";wss;path=${wssPath};n=${serverName}")
+    elif [[ ${domainType} = Other ]]; then
+        local plugin_opts=$(get_str_replace ";wss;path=${wssPath};n=${serverName};cca=${base64Cert}")
+    fi
+    ss_link="${link_head}${cipher_pwd}${ip_port_plugin}${plugin_opts}"
+}
 
 
 

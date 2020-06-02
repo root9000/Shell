@@ -8,7 +8,6 @@ ss_config_standalone(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp"
 	}
@@ -25,7 +24,6 @@ ss_v2ray_ws_http_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
@@ -43,7 +41,6 @@ ss_v2ray_ws_tls_cdn_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
@@ -62,7 +59,6 @@ ss_v2ray_quic_tls_cdn_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_only",
 	    "plugin":"v2ray-plugin",
@@ -80,7 +76,6 @@ ss_v2ray_ws_tls_web_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
@@ -93,7 +88,11 @@ caddy_config_none_cdn(){
 	cat > ${CADDY_CONF_FILE}<<-EOF
 	${domain}:443 {
 	    gzip
-	    tls ${email}
+	    log /var/log/caddy-access.log
+	    errors /var/log/caddy-error.log
+	    tls ${email} {
+	        protocols tls1.3
+	    }
 	    timeouts none
 	    proxy ${path} localhost:${shadowsocksport} {
 	        websocket
@@ -115,7 +114,6 @@ ss_v2ray_ws_tls_web_cdn_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"v2ray-plugin",
@@ -128,8 +126,11 @@ caddy_config_with_cdn(){
 	cat > ${CADDY_CONF_FILE}<<-EOF
 	${domain}:443 {
 	    gzip
+	    log /var/log/caddy-access.log
+	    errors /var/log/caddy-error.log
 	    tls {
 	        dns cloudflare
+	        protocols tls1.3
 	    }
 	    timeouts none
 	    proxy ${path} localhost:${shadowsocksport} {
@@ -147,7 +148,7 @@ nginx_config(){
 	cat > /etc/nginx/nginx.conf<<-EOF
 	user nginx;
 	worker_processes auto;
-	error_log /var/log/nginx/error.log info;
+	error_log /var/log/nginx-error.log info;
 	pid /var/run/nginx.pid;
 
 	events {
@@ -158,7 +159,7 @@ nginx_config(){
 
 	http {
 	    keepalive_timeout 60;
-	    access_log /var/log/nginx/access.log combined;
+	    access_log /var/log/nginx-access.log combined;
 
 	    server {
 	        listen 80;
@@ -234,7 +235,6 @@ ss_obfs_http_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"obfs-server",
@@ -252,7 +252,6 @@ ss_obfs_tls_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"obfs-server",
@@ -271,7 +270,6 @@ ss_goquiet_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_and_udp",
 	    "plugin":"gq-server",
@@ -324,11 +322,27 @@ ss_mtt_tls_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_only",
 	    "plugin":"mtt-server",
 	    "plugin_opts":"n=${serverName}"
+	}
+	EOF
+}
+
+ss_mtt_tls_dns_only_config(){
+	cat > ${SHADOWSOCKS_CONFIG}<<-EOF
+	{
+	    "server":${server_value},
+	    "server_port":${shadowsocksport},
+	    "password":"${shadowsockspwd}",
+	    "timeout":300,
+	    "user":"nobody",
+	    "method":"${shadowsockscipher}",
+	    "nameserver":"8.8.8.8",
+	    "mode":"tcp_only",
+	    "plugin":"mtt-server",
+	    "plugin_opts":"key=${keyPath};cert=${cerPath}"
 	}
 	EOF
 }
@@ -342,7 +356,6 @@ ss_mtt_wss_config(){
 	    "timeout":300,
 	    "user":"nobody",
 	    "method":"${shadowsockscipher}",
-	    "fast_open":${fast_open},
 	    "nameserver":"8.8.8.8",
 	    "mode":"tcp_only",
 	    "plugin":"mtt-server",
@@ -351,9 +364,85 @@ ss_mtt_wss_config(){
 	EOF
 }
 
+ss_mtt_wss_dns_only_or_cdn_config(){
+	cat > ${SHADOWSOCKS_CONFIG}<<-EOF
+	{
+	    "server":${server_value},
+	    "server_port":${shadowsocksport},
+	    "password":"${shadowsockspwd}",
+	    "timeout":300,
+	    "user":"nobody",
+	    "method":"${shadowsockscipher}",
+	    "nameserver":"8.8.8.8",
+	    "mode":"tcp_only",
+	    "plugin":"mtt-server",
+	    "plugin_opts":"wss;wss-path=${wssPath};key=${keyPath};cert=${cerPath}"
+	}
+	EOF
+}
 
+ss_mtt_wss_dns_only_or_cdn_web_config(){
+	cat > ${SHADOWSOCKS_CONFIG}<<-EOF
+	{
+	    "server":${server_value},
+	    "server_port":${shadowsocksport},
+	    "password":"${shadowsockspwd}",
+	    "timeout":300,
+	    "user":"nobody",
+	    "method":"${shadowsockscipher}",
+	    "nameserver":"8.8.8.8",
+	    "mode":"tcp_only",
+	    "plugin":"mtt-server",
+	    "plugin_opts":"wss;wss-path=${wssPath};disable-tls"
+	}
+	EOF
+}
 
+rabbit_tcp_config_standalone(){
+	cat > ${RABBIT_CONFIG}<<-EOF
+	{
+	    "mode":"s",
+	    "rabbit_addr":":${listen_port}",
+	    "password":"${rabbitKey}",
+	    "verbose":${rabbitLevel}
+	}
+	EOF
+}
 
+# simple-tls
+ss_simple_tls_config(){
+	cat > ${SHADOWSOCKS_CONFIG}<<-EOF
+	{
+	    "server":${server_value},
+	    "server_port":${shadowsocksport},
+	    "password":"${shadowsockspwd}",
+	    "timeout":300,
+	    "user":"nobody",
+	    "method":"${shadowsockscipher}",
+	    "nameserver":"8.8.8.8",
+	    "mode":"tcp_only",
+	    "plugin":"simple-tls",
+	    "plugin_opts":"s;key=${keyPath};cert=${cerPath}"
+	}
+	EOF
+}
+
+ss_simple_tls_wss_config(){
+	cat > ${SHADOWSOCKS_CONFIG}<<-EOF
+	{
+	    "server":${server_value},
+	    "server_port":${shadowsocksport},
+	    "password":"${shadowsockspwd}",
+	    "timeout":300,
+	    "user":"nobody",
+	    "method":"${shadowsockscipher}",
+	    "nameserver":"8.8.8.8",
+	    "mode":"tcp_only",
+	    "plugin":"simple-tls",
+	    "plugin_opts":"s;wss;path=${wssPath};key=${keyPath};cert=${cerPath}"
+	}
+	EOF
+}
 
 
 

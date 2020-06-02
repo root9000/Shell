@@ -23,6 +23,18 @@ shadowsocks_uninstall(){
         elif check_sys packageManager apt; then
             update-rc.d -f ${ss_service_name} remove
         fi
+     elif [ "$(command -v go-shadowsocks2)" ]; then
+        # check Go-shadowsocks status
+        ${GO_SHADOWSOCKS2_INIT} status > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            ${GO_SHADOWSOCKS2_INIT} stop > /dev/null 2>&1
+        fi
+        local ss_service_name=$(basename ${GO_SHADOWSOCKS2_INIT})
+        if check_sys packageManager yum; then
+            chkconfig --del ${ss_service_name}
+        elif check_sys packageManager apt; then
+            update-rc.d -f ${ss_service_name} remove
+        fi
     fi
     
     # uninstall ss-libev
@@ -50,11 +62,13 @@ shadowsocks_uninstall(){
     # uninstall ss-rust
     rm -f /usr/local/bin/ssserver
     rm -f /usr/local/bin/sslocal
-    rm -f /usr/local/bin/sstunnel
     rm -f /usr/local/bin/ssurl
     rm -f /usr/local/bin/ssmanager
-    rm -f /usr/local/bin/ssredir
     rm -f ${SHADOWSOCKS_RUST_INIT}
+
+    # uninstall go-ss2
+    rm -rf /usr/local/bin/go-shadowsocks2
+    rm -rf ${GO_SHADOWSOCKS2_INIT}
 }
 
 v2ray_plugin_uninstall(){
@@ -85,7 +99,6 @@ kcptun_uninstall(){
     # uninstall kcptun
     rm -fr ${KCPTUN_INSTALL_PATH} > /dev/null 2>&1
     rm -fr $(dirname ${KCPTUN_CONFIG}) > /dev/null 2>&1
-    rm -fr ${KCPTUN_LOG_DIR} > /dev/null 2>&1
     rm -f ${KCPTUN_INIT} > /dev/null 2>&1
 }
 
@@ -138,6 +151,37 @@ mtt_uninstall(){
     rm -f /usr/local/bin/mtt-server
 }
 
+rabbit_tcp_uninstall(){
+    if [ -e ${RABBIT_INIT} ]; then
+        ${RABBIT_INIT} status > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            ${RABBIT_INIT} stop > /dev/null 2>&1
+        fi
+        local rabbit_tcp_service_name=$(basename ${RABBIT_INIT})
+        if check_sys packageManager yum; then
+            chkconfig --del ${rabbit_tcp_service_name}
+        elif check_sys packageManager apt; then
+            update-rc.d -f ${rabbit_tcp_service_name} remove
+        fi
+    fi
+    
+    ps -ef |grep -v grep | grep rabbit-tcp |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+    
+    # uninstall rabbit-tcp
+    rm -f ${RABBIT_BIN_PATH}
+    rm -f ${RABBIT_INIT}
+    rm -fr $(dirname ${RABBIT_CONFIG}) > /dev/null 2>&1
+}
+
+simple_tls_uninstall(){
+    ps -ef |grep -v grep | grep simple-tls |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+
+    # uninstall mos-tls-tunnel
+    rm -f /var/run/simple-tls.pid
+    rm -f /usr/local/bin/simple-tls
+    rm -rf /etc/simple-tls
+}
+
 caddy_uninstall(){
     if [[ -e ${CADDY_BIN_PATH} ]]; then
         PID=`ps -ef |grep "caddy" |grep -v "grep" |grep -v "init.d" |grep -v "service" |grep -v "caddy_install" |awk '{print $2}'`
@@ -147,7 +191,6 @@ caddy_uninstall(){
         elif check_sys packageManager apt; then
             update-rc.d -f caddy remove
         fi
-        [[ -s /tmp/caddy.log ]] && rm -rf /tmp/caddy.log
         rm -rf $(dirname ${CADDY_BIN_PATH})
         rm -rf /etc/init.d/caddy
         rm -rf /usr/bin/caddy
@@ -176,6 +219,34 @@ ipcalc_uninstall(){
     rm -rf /usr/local/bin/ipcalc-0.41
 }
 
+log_file_remove(){
+    rm -f /var/log/shadowsocks-libev.log
+    rm -f /var/log/shadowsocks-rust.log
+    rm -f /var/log/go-shadowsocks2.log
+    rm -f /var/log/kcptun.log
+    rm -f /var/log/cloak.log
+    rm -f /var/log/rabbit-tcp.log
+    rm -f /var/log/caddy-error.log
+    rm -f /var/log/caddy-access.log
+    rm -f /var/log/nginx-error.log
+    rm -f /var/log/nginx-access.log
+}
+
+uninstall_services(){
+    shadowsocks_uninstall
+    v2ray_plugin_uninstall
+    kcptun_uninstall
+    simple_obfs_uninstall
+    goquiet_uninstall
+    cloak_uninstall
+    mtt_uninstall
+    rabbit_tcp_uninstall
+    simple_tls_uninstall
+    caddy_uninstall
+    nginx_uninstall
+    ipcalc_uninstall
+    log_file_remove
+}
 
 
 

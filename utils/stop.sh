@@ -2,6 +2,7 @@ shadowsocks_stop(){
     # kill v2ray-plugin 、obfs-server、gq-server ck-server
     ps -ef |grep -v grep | grep ss-server |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
     ps -ef |grep -v grep | grep ssserver |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+    ps -ef |grep -v grep | grep go-shadowsocks2 |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
 
     if [ "$(command -v ss-server)" ]; then
         echo -e "Stopping Shadowsocks-libev success"
@@ -9,6 +10,10 @@ shadowsocks_stop(){
     
     if [ "$(command -v ssserver)" ]; then
         echo -e "Stopping Shadowsocks-rust success"
+    fi
+
+    if [ "$(command -v go-shadowsocks2)" ]; then
+        echo -e "Stopping Go-shadowsocks success"
     fi
 }
 
@@ -64,6 +69,22 @@ mtt_stop(){
     fi
 }
 
+rabbit_tcp_stop(){
+    ps -ef |grep -v grep | grep rabbit-tcp |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+
+    if [ "$(command -v rabbit-tcp)" ]; then
+        echo -e "Stopping rabbit-tcp success"
+    fi
+}
+
+simple_tls_stop(){
+    ps -ef |grep -v grep | grep simple-tls |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+
+    if [ "$(command -v simple-tls)" ]; then
+        echo -e "Stopping simple-tls success"
+    fi
+}
+
 caddy_stop(){
     ps -ef |grep -v grep | grep caddy |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
     
@@ -82,5 +103,19 @@ nginx_stop(){
             echo "Stopping nginx failed"
         fi
     fi
+}
+
+stop_services(){
+    shadowsocks_stop
+    v2ray_plugin_stop
+    kcptun_stop
+    simple_obfs_stop
+    goquiet_stop
+    cloak_stop
+    mtt_stop
+    rabbit_tcp_stop
+    simple_tls_stop
+    caddy_stop
+    nginx_stop
 }
 

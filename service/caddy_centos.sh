@@ -90,7 +90,7 @@ do_start() {
         return 0
     fi
     ulimit -n 51200
-    nohup "$DAEMON" --conf="$CONF" -agree >> /tmp/caddy.log 2>&1 &
+    nohup "$DAEMON" --conf="$CONF" -agree > /dev/null 2>&1 &
     check_pid
     echo $get_pid > $PID_FILE
     if check_running; then

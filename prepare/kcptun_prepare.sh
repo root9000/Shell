@@ -1,8 +1,34 @@
+# kcptun crypt
+KCPTUN_CRYPT=(
+aes
+aes-128
+aes-192
+salsa20
+blowfish
+twofish
+cast5
+3des
+tea
+xtea
+xor
+sm4
+none
+)
+
+# kcptun mode(no manual)
+KCPTUN_MODE=(
+fast3
+fast2
+fast
+normal
+)
+
+
 install_prepare_libev_kcptun(){ 
     # 设置 Kcptun 服务器监听端口 listen_port
     while true
     do
-        echo -e "请输入 Kcptun 服务端运行端口 [1-65535]\n${Tip} 这个端口，就是 Kcptun 客户端要连接的端口."
+        echo && echo -e "请输入 Kcptun 服务端运行端口 [1-65535]\n${Tip} 这个端口，就是 Kcptun 客户端要连接的端口."
         read -e -p "(默认: 29900):" listen_port
         [ -z "${listen_port}" ] && listen_port=29900
         expr ${listen_port} + 1 &>/dev/null
@@ -93,7 +119,7 @@ install_prepare_libev_kcptun(){
     # 设置 Kcptun 加速模式 mode
     while true
     do
-        echo -e "请选择加速模式(mode)\n${Tip} 加速模式和发送窗口大小共同决定了流量的损耗大小. ${Red}未支持(手动模式 manual)${suffix}”"
+        echo -e "请选择加速模式(mode)\n${Tip} 加速模式和发送窗口大小共同决定了流量的损耗大小. ${Red}未支持(手动模式 manual)${suffix}"
 
         for ((i=1;i<=${#KCPTUN_MODE[@]};i++ )); do
             hint="${KCPTUN_MODE[$i-1]}"

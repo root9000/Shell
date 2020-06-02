@@ -180,11 +180,15 @@ update_mtt(){
     if [[ -e ${MTT_BIN_PATH} ]]; then
         mtt_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/IrineSistiana/mos-tls-tunnel/releases | grep -o '"tag_name": ".*"' |head -n 1| sed 's/"//g;s/v//g' | sed 's/tag_name: //g')
         [ -z ${mtt_ver} ] && echo -e "${Error} 获取 mos-tls-tunnel 最新版本失败." && exit 1
-        read current_goquiet_ver < ${MTT_VERSION_FILE}
-        if ! check_latest_version ${current_goquiet_ver} ${mtt_ver}; then
-            echo -e "${Point} mos-tls-tunnel当前已是最新版本${current_goquiet_ver}不需要更新."
-            echo
-            exit 1
+        read current_mtt_ver < ${MTT_VERSION_FILE}
+        if ! check_latest_version ${current_mtt_ver} ${mtt_ver}; then
+            echo -e "${Point} mos-tls-tunnel当前已是最新版本${current_mtt_ver}不需要更新."
+            if [[ ! -e ${CADDY_BIN_PATH} ]]; then
+                echo
+                exit 1
+            fi
+            update_caddy
+            exit 0
         fi
         
         local plugin_num="6"
@@ -200,6 +204,64 @@ update_mtt(){
         echo
         
         install_cleanup
+        update_caddy
+    fi
+}
+
+update_rabbit_tcp(){
+    cd ${CUR_DIR}
+    
+    if [[ -e ${RABBIT_BIN_PATH} ]]; then
+        rabbit_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/ihciah/rabbit-tcp/releases | grep -o '"tag_name": ".*"' |head -n 1| sed 's/"//g;s/v//g' | sed 's/tag_name: //g')
+        [ -z ${rabbit_ver} ] && echo -e "${Error} 获取 rabbit-tcp 最新版本失败." && exit 1
+        read current_rabbit_ver < ${RABBIT_VERSION_FILE}
+        if ! check_latest_version ${current_rabbit_ver} ${rabbit_ver}; then
+            echo -e "${Point} rabbit-tcp当前已是最新版本${current_rabbit_ver}不需要更新."
+            echo
+            exit 1
+        fi
+        
+        local plugin_num="7"
+        echo -e "${Info} 检测到rabbit-tcp有新版本，开始下载."
+        download_plugins_file
+        echo -e "${Info} 下载完成，开始安装."
+        improt_package "plugins" "rabbit_tcp_install.sh"
+        do_stop > /dev/null 2>&1
+        install_rabbit_tcp
+        do_restart > /dev/null 2>&1
+
+        echo -e "${Info} rabbit-tcp已成功升级为最新版本${rabbit_ver}"
+        echo
+        
+        install_cleanup
+    fi
+}
+
+update_simple_tls(){
+    cd ${CUR_DIR}
+
+    if [[ -e ${SIMPLE_TLS_BIN_PATH} ]]; then
+        simple_tls_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/IrineSistiana/simple-tls/releases | grep -o '"tag_name": ".*"' | head -n 1| sed 's/"//g;s/v//g' | sed 's/tag_name: //g')
+        [ -z ${simple_tls_ver} ] && echo -e "${Error} 获取 simple-tls 最新版本失败." && exit 1
+        read current_simple_tls_ver < ${SIMPLE_TLS_VERSION_FILE}
+        if ! check_latest_version ${current_simple_tls_ver} ${simple_tls_ver}; then
+            echo -e "${Point} simple-tls当前已是最新版本${current_simple_tls_ver}不需要更新."
+            exit 0
+        fi
+
+        local plugin_num="8"
+        echo -e "${Info} 检测到simple-tls有新版本，开始下载."
+        download_plugins_file
+        echo -e "${Info} 下载完成，开始安装."
+        improt_package "plugins" "simple_tls_install.sh"
+        do_stop > /dev/null 2>&1
+        install_simple_tls
+        do_restart > /dev/null 2>&1
+
+        echo -e "${Info} simple-tls已成功升级为最新版本${simple_tls_ver}"
+        echo
+
+        install_cleanup
     fi
 }
 
@@ -207,7 +269,7 @@ update_caddy(){
     cd ${CUR_DIR}
     
     if [[ -e ${CADDY_BIN_PATH} ]]; then
-        caddy_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/caddyserver/caddy/releases | grep -o '"tag_name": ".*"' | grep -v 'beta' | head -n 1 | sed 's/"//g;s/v//g' | sed 's/tag_name: //g')
+        caddy_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/caddyserver/caddy/releases | grep -o '"tag_name": ".*"' | sed 's/"//g;s/v//g' | sed 's/tag_name: //g' | grep -E '^1' | head -n 1)
         [ -z ${caddy_ver} ] && echo -e "${Error} 获取 caddy 最新版本失败." && exit 1
         current_caddy_ver=$(${CADDY_BIN_PATH} -version | grep Caddy | cut -d\  -f2 | sed 's/v//g')
         if ! check_latest_version ${current_caddy_ver} ${caddy_ver}; then
@@ -250,6 +312,8 @@ update_shadowsocks_libev(){
         update_goquiet
         update_cloak
         update_mtt
+        update_rabbit_tcp
+        update_simple_tls
         
         exit 1
     fi
@@ -271,6 +335,8 @@ update_shadowsocks_libev(){
     update_goquiet
     update_cloak
     update_mtt
+    update_rabbit_tcp
+    update_simple_tls
 }
 
 update_shadowsocks_rust(){
@@ -302,6 +368,8 @@ update_shadowsocks_rust(){
         update_goquiet
         update_cloak
         update_mtt
+        update_rabbit_tcp
+        update_simple_tls
         
         exit 1
     fi
@@ -323,4 +391,49 @@ update_shadowsocks_rust(){
     update_goquiet
     update_cloak
     update_mtt
+    update_rabbit_tcp
+    update_simple_tls
+}
+
+update_go_shadowsocks2(){
+    local SS_VERSION="go-ss2"
+
+    echo -e "${Info} 正在进行版本比对请稍等."
+    go_ver=$(wget --no-check-certificate -qO- https://api.github.com/repos/shadowsocks/go-shadowsocks2/releases | grep -o '"tag_name": ".*"' | head -n 1| sed 's/"//g;s/v//g' | sed 's/tag_name: //g')
+    [ -z ${go_ver} ] && echo -e "${Error} 获取 go-shadowsocks2 最新版本失败." && exit 1
+    read current_go_ver < ${GO_SHADOWSOCKS2_VERSION_FILE}
+    if ! check_latest_version ${current_go_ver} ${go_ver}; then
+        echo -e "${Point} go-shadowsocks2当前已是最新版本${current_go_ver}不需要更新."
+
+        update_v2ray_plugin
+        update_kcptun
+        update_simple_obfs
+        update_goquiet
+        update_cloak
+        update_mtt
+        update_rabbit_tcp
+        update_simple_tls
+
+        exit 1
+    fi
+
+    echo -e "${Info} 检测到SS有新版本，开始下载."
+    download_ss_file
+    echo -e "${Info} 下载完成，开始执行编译安装."
+    improt_package "tools" "shadowsocks_install.sh"
+    do_stop > /dev/null 2>&1
+    install_go_shadowsocks2
+    do_restart > /dev/null 2>&1
+    echo -e "${Info} go-shadowsocks2已成功升级为最新版本${go_ver}"
+
+    install_cleanup
+
+    update_v2ray_plugin
+    update_kcptun
+    update_simple_obfs
+    update_goquiet
+    update_cloak
+    update_mtt
+    update_rabbit_tcp
+    update_simple_tls
 }

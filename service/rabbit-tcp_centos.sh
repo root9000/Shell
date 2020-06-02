@@ -1,22 +1,25 @@
 #!/usr/bin/env bash
+# chkconfig: 2345 90 10
+# description: A multi-connection TCP forwarder/accelerator
 
 ### BEGIN INIT INFO
-# Provides:          caddy
+# Provides:          rabbit-tcp
 # Required-Start:    $network $syslog
 # Required-Stop:     $network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: A Stable & Secure Tunnel Based On KCP with N:M Multiplexing
-# Description:       Start or stop the  caddy server
+# Short-Description: It can help you improve network speed
+# Description:       Start or stop the  rabbit-tcp server
 ### END INIT INFO
 
 
-if [ -f /usr/local/caddy/caddy ]; then
-    DAEMON=/usr/local/caddy/caddy
+if [ -f /usr/local/bin/rabbit-tcp ]; then
+    DAEMON=/usr/local/bin/rabbit-tcp
 fi
 
-NAME=caddy
-CONF=/usr/local/caddy/Caddyfile
+NAME=rabbit-tcp
+CONF=/etc/rabbit-tcp/config.json
+LOG=/var/log/rabbit-tcp.log
 PID_DIR=/var/run
 PID_FILE=$PID_DIR/$NAME.pid
 RET_VAL=0
@@ -24,7 +27,7 @@ RET_VAL=0
 [ -x $DAEMON ] || exit 0
 
 check_pid(){
-	get_pid=`ps -ef |grep -v grep |grep -v "init.d" |grep -v "service" |grep $NAME |awk '{print $2}'`
+	get_pid=`ps -ef |grep -v grep | grep $NAME | grep -E 'mode|rabbit-addr|password|verbose' |awk '{print $2}'`
 }
 
 check_pid
@@ -42,15 +45,30 @@ if [ ! -d $PID_DIR ]; then
     fi
 fi
 
+if [ ! -d "$(dirname ${LOG})" ]; then
+    mkdir -p $(dirname ${LOG})
+fi
+
 if [ ! -f $CONF ]; then
     echo "$NAME config file $CONF not found"
     exit 1
 fi
 
-if $(grep -q 'cloudflare' $CONF); then
-    export CLOUDFLARE_EMAIL=$(cat ~/.api/cf.api | grep "CLOUDFLARE_EMAIL" | cut -d= -f2)
-    export CLOUDFLARE_API_KEY=$(cat ~/.api/cf.api | grep "CLOUDFLARE_API_KEY" | cut -d= -f2)
+if [ ! "$(command -v jq)" ]; then
+    echo "Cannot find dependent package 'jq' Please use yum or apt to install and try again"
+    exit 1
 fi
+
+Mode=$(cat ${CONF} | jq -r .mode)
+[ -z "$Mode" ] && echo -e "Configuration option 'mode' acquisition failed" && exit 1
+RabbitAddr=$(cat ${CONF} | jq -r .rabbit_addr) 
+[ -z "$RabbitAddr" ] && echo -e "Configuration option 'rabbit_addr' acquisition failed" && exit 1
+PassWord=$(cat ${CONF} | jq -r .password)
+[ -z "$PassWord" ] && echo -e "Configuration option 'password' acquisition failed" && exit 1
+Verbose=$(cat ${CONF} | jq -r .verbose)
+[ -z "$Verbose" ] && echo -e "Configuration option 'verbose' acquisition failed" && exit 1
+
+
 
 check_running() {
     if [ -e $PID_FILE ]; then
@@ -87,7 +105,7 @@ do_start() {
         return 0
     fi
     ulimit -n 51200
-    nohup "$DAEMON" --conf="$CONF" -agree > /dev/null 2>&1 &
+    nohup $DAEMON -mode $Mode -rabbit-addr $RabbitAddr -password $PassWord -verbose $Verbose > $LOG 2>&1 &
     check_pid
     echo $get_pid > $PID_FILE
     if check_running; then

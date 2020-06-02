@@ -1,4 +1,4 @@
-## ss-plugins.sh
+## ss-plugins.sh (注意：如果运行脚本出现意外报错，请执行 ./ss-plugins.sh script 升级脚本。)
 
 #### 下载安装:
 ``` bash
@@ -22,6 +22,7 @@ Usage: ./ss-plugins.sh [options...] [args...]
         status           查看状态
         script           升级脚本
         show             显示可视化配置
+        log              查看日志文件
         uid              为cloak添加一个新的uid用户
         link             用新添加的uid生成一个新的SS://链接
         scan             用ss://链接在当前终端上生成一个可供扫描的二维码
@@ -42,6 +43,10 @@ Usage: ./ss-plugins.sh [options...] [args...]
     SS-rust安装目录：/usr/local/bin
     SS-rust启动文件：/etc/init.d/shadowsocks-rust
     SS-rust配置文件：/etc/shadowsocks/config.json
+    
+    Go-ss2安装目录：/usr/local/bin
+    Go-ss2启动文件：/etc/init.d/go-shadowsocks2
+    Go-ss2配置文件：/etc/shadowsocks/config.json
 
     kcptun安装目录：/usr/local/kcptun
     kcptun启动文件：/etc/init.d/kcptun
@@ -51,15 +56,27 @@ Usage: ./ss-plugins.sh [options...] [args...]
     cloak启动文件：/etc/init.d/cloak
     cloak配置文件：/etc/cloak/ckserver.json
 
+    rabbit-tcp安装目录：/usr/local/bin
+    rabbit-tcp启动文件：/etc/init.d/rabbit-tcp
+    rabbit-tcp配置文件：/etc/rabbit-tcp/config.json
+
     caddy安装目录：/usr/local/caddy
     caddy配置文件: /usr/local/caddy/Caddyfile
-    caddy日志文件：/tmp/caddy.log
     caddy生成证书目录：~/.caddy/acme/acme-v02.api.letsencrypt.org/sites/xxx.xxx(域名)/
     
     nginx二进制文件：/usr/sbin/nginx
     nginx配置文件：/etc/nginx/nginx.conf
-    nginx错误日志：/var/log/nginx/error.log
-    nginx访问日志：/var/log/nginx/access.log
+
+    SS-libev日志文件：/var/log/shadowsocks-libev.log
+    SS-rust日志文件：/var/log/shadowsocks-rust.log
+    Go-ss2日志文件：/var/log/go-shadowsocks2.log
+    kcptun日志文件：/var/log/kcptun.log
+    cloak日志文件：/var/log/cloak.log
+    rabbit-tcp日志文件：/var/log/rabbit-tcp.log
+    caddy错误日志文件：/var/log/caddy-error.log
+    caddy访问日志文件：/var/log/caddy-access.log
+    nginx错误日志文件：/var/log/nginx-error.log
+    nginx访问日志文件：/var/log/nginx-access.log
 
     acme.sh安装目录：~/.acme.sh
     acme.sh生成证书目录：~/.acme.sh/xxx.xxx(域名)/
@@ -104,6 +121,8 @@ Usage: ./ss-plugins.sh [options...] [args...]
   6. mos-tls-tunnel
         1. tls
         2. wss
+  7. rabbit-tcp
+  8. simple-tls
 
 
 注意：
@@ -168,7 +187,7 @@ Usage: ./ss-plugins.sh [options...] [args...]
 
 ~~v2ray-plugin 所要用到的域名，可以从 [freenom.com](https://www.freenom.com) 获取免费域名， 申请需要挂代理，代理是哪国ip 就填写哪国的资料，不然会导致无法申请。~~ (似乎失效了，有账号的仍能注册)
 
-另外，生成的 ss:// 链接，不支持插件参数导入，需要手动复制粘贴，使用 kcptun 插件时，该链接仅支持在手机上导入，使用 mos-tls-tunnel 插件时，暂只支持 Android 平台。
+另外，生成的 ss:// 链接，不支持插件参数导入，需要手动复制粘贴，使用 kcptun 插件时，该链接仅支持在手机上导入。
 
 &nbsp;
 
@@ -176,6 +195,7 @@ Usage: ./ss-plugins.sh [options...] [args...]
 
 - [shadowsocks-libev](https://github.com/shadowsocks/shadowsocks-libev)
 - [shadowsocks-rust](https://github.com/shadowsocks/shadowsocks-rust)
+- [go-shadowsocks2](https://github.com/shadowsocks/go-shadowsocks2)
 - [shadowsocks-windows](<https://github.com/shadowsocks/shadowsocks-windows/releases>)
 - [shadowsocks-android](<https://github.com/shadowsocks/shadowsocks-android/releases>)
 - [v2ray-plugin](<https://github.com/shadowsocks/v2ray-plugin/releases>)
@@ -190,3 +210,6 @@ Usage: ./ss-plugins.sh [options...] [args...]
 - [Cloak-android](https://github.com/cbeuw/Cloak-android/releases)
 - [mos-tls-tunnel](https://github.com/IrineSistiana/mos-tls-tunnel/releases)
 - [mostunnel-android](https://github.com/IrineSistiana/mostunnel-android/releases)
+- [rabbit-tcp](https://github.com/ihciah/rabbit-tcp/releases)
+- [rabbit-plugin](https://github.com/ihciah/rabbit-plugin/releases)
+- [simple-tls](https://github.com/IrineSistiana/simple-tls/releases)
