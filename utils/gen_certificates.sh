@@ -20,7 +20,7 @@ get_latest_acme_sh(){
 
 set_defualt_ca_for_acme_sh(){
     _echo -i "设置默认 ca 为  letsencrypt."
-    ${ACMESH_INSTALL_DIR}/acme.sh --set-default-ca --server sslcom
+    ${ACMESH_INSTALL_DIR}/acme.sh --set-default-ca --server zerossl
 }
 
 get_input_api_info(){
