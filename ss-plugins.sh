@@ -5,7 +5,7 @@ export PATH
 
 # shell version
 # ====================
-SHELL_VERSION="2.8.1"
+SHELL_VERSION="2.8.2"
 # ====================
 
 
@@ -23,12 +23,16 @@ fi
 
 
 # bbr
-TEDDYSUN_BBR_SCRIPT_URL="https://git.io/vbUk0"
-CHIAKGE_BBR_SCRIPT_URL="https://git.io/vxJ1I"
+TEDDYSUN_BBR_SCRIPT_URL="https://raw.githubusercontent.com/teddysun/across/master/bbr.sh"
 
 
 # Humanization config PATH
 HUMAN_CONFIG="/etc/shadowsocks/humanization.conf"
+
+
+# script env dir
+SS_PLUGINS_SCRIPT_ENV_DIR="/root/.ssPluginsScriptEnv"
+SS_PLUGINS_SCRIPT_ENV_VARIABLES_FILE="${SS_PLUGINS_SCRIPT_ENV_DIR}/env.info"
 
 
 # shadowsocks config
@@ -610,26 +614,6 @@ check_script_update(){
     fi
 }
 
-choose_script_bbr(){
-    local bbrVersion=(
-        "秋水逸冰-BBR"
-        "BBR|BBR魔改|BBRplus|Lotserver版本"
-    )
-    generate_menu_logic "${bbrVersion[*]}" "BBR的安装脚本" "1"
-    bbr_menu_num="${inputInfo}"
-    case "${bbr_menu_num}" in
-        1)
-            source <(curl -sL "${TEDDYSUN_BBR_SCRIPT_URL}")
-            ;;
-        2)
-            source <(curl -sL "${CHIAKGE_BBR_SCRIPT_URL}")
-            ;;
-        *)
-            _echo -e "请输入正确的数字 [1-2]"
-            ;;
-    esac
-}
-
 get_ip(){
     local IP=$( ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1 )
     [ -z "${IP}" ] && IP=$( wget -qO- -t1 -T2 ipv4.icanhazip.com )
@@ -709,6 +693,25 @@ get_version(){
     else
         grep -oE  "[0-9.]+" /etc/issue
     fi
+}
+
+get_env_variable(){
+    local varName=$1
+    local keyValuePair
+
+    if [ -e "${SS_PLUGINS_SCRIPT_ENV_VARIABLES_FILE}" ]; then
+        keyValuePair=$(grep "${varName}" "${SS_PLUGINS_SCRIPT_ENV_VARIABLES_FILE}")
+        [ -n "${keyValuePair}" ] && export "${keyValuePair}" && return 0
+    else
+        return 1
+    fi
+}
+
+write_env_variable(){
+    local keyValuePairText=$1
+
+    [ ! -e "${SS_PLUGINS_SCRIPT_ENV_DIR}" ] && mkdir -p "${SS_PLUGINS_SCRIPT_ENV_DIR}"
+    echo "${keyValuePairText}" >> "${SS_PLUGINS_SCRIPT_ENV_VARIABLES_FILE}"
 }
 
 centosversion(){
@@ -1316,6 +1319,20 @@ add_cron_job(){
     (crontab -l ; echo "${random_minute} 0 * * * \"${CUR_DIR}\"/ss-plugins.sh renew > /dev/null") | sort - | uniq - | crontab -
 }
 
+sync_time(){
+    if [ "${CipherMark}" = "Non-AEAD-2022" ]; then
+        return
+    fi
+    _echo -i "开始同步时间.."
+    if [ "$(command -v ntpdate)" ]; then
+        ntpdate pool.ntp.org
+        [ $? -eq 0 ] && _echo -i "现在时间: $(date -R) 同步完成..."
+    elif [ "$(command -v chronyc)" ]; then
+        chronyc -a makestep
+        [ $? -eq 0 ] && _echo -i "现在时间: $(date -R) 同步完成..."
+    fi
+}
+
 install_status(){
     status_init
 
@@ -1344,6 +1361,7 @@ install_step_all(){
     config_firewall_logic
     install_main
     install_webserver
+    sync_time
     add_more_entropy
     install_cleanup
     improt_package "templates" "config.sh"
@@ -1520,7 +1538,7 @@ do_install(){
     [ -z "${menu_num}" ] && menu_num=2
     case "${menu_num}" in
         1)   
-            choose_script_bbr
+            source <(curl -sL "${TEDDYSUN_BBR_SCRIPT_URL}")
             ;;
         2)
             install_step_all
