@@ -11,7 +11,7 @@ shadowsocks_uninstall(){
         elif check_sys packageManager apt; then
             update-rc.d -f ${ss_service_name} remove
         fi
-    elif [ "$(command -v ssserver)" ]; then
+    elif [ "$(command -v ssservice)" ]; then
         # check Shadowsocks-rust status
         ${SHADOWSOCKS_RUST_INIT} status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
@@ -77,7 +77,6 @@ v2ray_plugin_uninstall(){
     ps -ef |grep -v grep | grep v2ray-plugin |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
     
     # uninstall v2ray-plugin
-    rm -f /var/run/v2ray-plugin.pid
     rm -f /usr/local/bin/v2ray-plugin
 }
 
@@ -106,7 +105,6 @@ simple_obfs_uninstall(){
     ps -ef |grep -v grep | grep obfs-server |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
     
     # uninstall simple-obfs
-    rm -f /var/run/simple-obfs.pid
     rm -f /usr/local/bin/obfs-local
     rm -f /usr/local/bin/obfs-server
 }
@@ -115,7 +113,6 @@ goquiet_uninstall(){
     ps -ef |grep -v grep | grep gq-server |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
     
     # uninstall goquiet
-    rm -f /var/run/goquiet.pid
     rm -f /usr/local/bin/gq-server
 }
 
@@ -147,7 +144,6 @@ mtt_uninstall(){
     ps -ef |grep -v grep | grep mtt-server |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
     
     # uninstall mos-tls-tunnel
-    rm -f /var/run/mos-tls-tunnel.pid
     rm -f /usr/local/bin/mtt-server
 }
 
@@ -177,7 +173,6 @@ simple_tls_uninstall(){
     ps -ef |grep -v grep | grep simple-tls |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
 
     # uninstall mos-tls-tunnel
-    rm -f /var/run/simple-tls.pid
     rm -f /usr/local/bin/simple-tls
     rm -rf /etc/simple-tls
 }
@@ -186,7 +181,6 @@ gost_plugin_uninstall(){
     ps -ef |grep -v grep | grep gost-plugin |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
 
     # uninstall gost-plugin
-    rm -f /var/run/gost-plugin.pid
     rm -f /usr/local/bin/gost-plugin
 }
 
@@ -194,7 +188,6 @@ xray_plugin_uninstall(){
     ps -ef |grep -v grep | grep xray-plugin |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
 
     # uninstall xray-plugin
-    rm -f /var/run/xray-plugin.pid
     rm -f /usr/local/bin/xray-plugin
 }
 
@@ -202,7 +195,6 @@ qtun_uninstall(){
     ps -ef |grep -v grep | grep qtun-server |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
 
     # uninstall qtun
-    rm -f /var/run/qtun.pid
     rm -f /usr/local/bin/qtun-server
 }
 
@@ -210,7 +202,6 @@ gun_uninstall(){
     ps -ef |grep -v grep | grep gun-server |awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
 
     # uninstall gun
-    rm -f /var/run/gun.pid
     rm -f /usr/local/bin/gun-server
 }
 
@@ -233,13 +224,15 @@ caddy_uninstall(){
 nginx_uninstall(){
     if [[ -e ${NGINX_BIN_PATH} ]] && [[ -e ${WEB_INSTALL_MARK} ]]; then
         if check_sys packageManager yum; then
-            sudo yum remove -y nginx > /dev/null 2>&1
+            yum remove -y nginx > /dev/null 2>&1
             rm -rf $(dirname ${NGINX_CONFIG})
         elif check_sys packageManager apt; then
-            sudo apt remove -y nginx --purge > /dev/null 2>&1
+            apt remove -y nginx --purge > /dev/null 2>&1
             rm -rf $(dirname ${NGINX_CONFIG})
         fi
         rm -rf ${WEB_INSTALL_MARK}
+        rm -rf /etc/apt/trusted.gpg
+        rm -rf /etc/apt/sources.list.d/nginx.list
     fi
 }
 
@@ -264,6 +257,24 @@ log_file_remove(){
     rm -f /var/log/caddy-access.log
     rm -f /var/log/nginx-error.log
     rm -f /var/log/nginx-access.log
+}
+
+pid_file_remove(){
+    rm -f /var/run/shadowsocks-libev.pid
+    rm -f /var/run/shadowsocks-rust.pid
+    rm -f /var/run/go-shadowsocks2.pid
+    rm -f /var/run/v2ray-plugin.pid
+    rm -f /var/run/kcptun-server.pid
+    rm -f /var/run/simple-obfs.pid
+    rm -f /var/run/GoQuiet.pid
+    rm -f /var/run/ck-server.pid
+    rm -f /var/run/mos-tls-tunnel.pid
+    rm -f /var/run/rabbit-tcp.pid
+    rm -f /var/run/simple-tls.pid
+    rm -f /var/run/gost-plugin.pid
+    rm -f /var/run/xray-plugin.pid
+    rm -f /var/run/qtun.pid
+    rm -f /var/run/gun.pid
 }
 
 remove_cron_job(){
@@ -306,6 +317,7 @@ uninstall_services(){
     nginx_uninstall
     ipcalc_uninstall
     log_file_remove
+    pid_file_remove
     remove_cron_job
     remove_added_port
     remove_env_folder

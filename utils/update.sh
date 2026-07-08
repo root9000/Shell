@@ -33,8 +33,8 @@ judge_not_update_when_simple_tls_is_specified_version(){
     local currentVersion=$2
 
     if [[ -e ${SIMPLE_TLS_BIN_PATH} ]]; then
-        if ! check_latest_version "0.4.7" ${currentVersion}; then
-            echo -e "${Point} ${appName}当前版本是${currentVersion}及以下版本，与最新版本不兼容，脚本不提供更新."
+        if ! check_latest_version "0.7.0" ${currentVersion}; then
+            echo -e "${Point} ${appName}当前版本 v${currentVersion} 是 v0.7.0 及以下的指定版本，与最新版本不兼容，脚本不提供更新."
             exit 0
         fi
     fi
@@ -45,6 +45,8 @@ update_download(){
     local downloadFileName=$2
     local SS_VERSION plugin_num
     
+    TEMP_DIR_PATH=$(mktemp -d)
+    trap "rm -rf $TEMP_DIR_PATH; exit" 2
     _echo -i "检测到${downloadFileName}有新版本，开始下载."
     if $(judge_is_num "${downloadMark}"); then
         plugin_num=${downloadMark}
@@ -61,6 +63,10 @@ update_install(){
     local shFileName=$2
     local calledFuncName=$3
 
+    if [ -z ${TEMP_DIR_PATH} ]; then
+        TEMP_DIR_PATH=$(mktemp -d)
+        trap "rm -rf $TEMP_DIR_PATH; exit" 2
+    fi
     improt_package "${packageName}" "${shFileName}"
     do_stop > /dev/null 2>&1
     ${calledFuncName}
@@ -98,7 +104,7 @@ ss_update_preparation(){
         ssUpdateShFileName="shadowsocks_install.sh"
         ssUpdateCalledFuncName="install_shadowsocks_rust"
         ssLatestVersion=$(get_ss_version "${ssNameUpdate}")
-        ssCurrentVersion=$(ssserver -V | grep shadowsocks | cut -d\  -f2)
+        ssCurrentVersion=$(ssservice -V | grep shadowsocks | cut -d\  -f2)
     elif [[ -e ${GO_SHADOWSOCKS2_BIN_PATH} ]]; then
         ssNameUpdate="go-shadowsocks2"
         ssUpdateDownloadMark="go-ss2"

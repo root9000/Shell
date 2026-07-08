@@ -5,7 +5,7 @@ export PATH
 
 # shell version
 # ====================
-SHELL_VERSION="2.8.2"
+SHELL_VERSION="2.8.4"
 # ====================
 
 
@@ -47,7 +47,7 @@ SHADOWSOCKS_LIBEV_INIT_ONLINE="${BASE_URL}/service/shadowsocks-libev.sh"
 
 # shadowsocks-rust config and init
 SHADOWSOCKS_RUST_INSTALL_PATH="/usr/local/bin"
-SHADOWSOCKS_RUST_BIN_PATH="/usr/local/bin/ssserver"
+SHADOWSOCKS_RUST_BIN_PATH="/usr/local/bin/ssservice"
 SHADOWSOCKS_RUST_INIT="/etc/init.d/shadowsocks-rust"
 SHADOWSOCKS_RUST_INIT_LOCAL="./service/shadowsocks-rust.sh"
 SHADOWSOCKS_RUST_INIT_ONLINE="${BASE_URL}/service/shadowsocks-rust.sh"
@@ -291,15 +291,15 @@ status_init(){
     if [ -e "${SHADOWSOCKS_LIBEV_BIN_PATH}" ]; then
         ssName="Shadowsocks-libev"
         ssPath="${SHADOWSOCKS_LIBEV_BIN_PATH}"
-        ssPid=`ps -ef | grep -v grep | grep ss-server | awk '{print $2}'`
+        ssPid=`ps -ef | grep -v grep | grep $SHADOWSOCKS_LIBEV_BIN_PATH | awk '{print $2}'`
     elif [ -e "${SHADOWSOCKS_RUST_BIN_PATH}" ]; then
         ssName="Shadowsocks-rust"
         ssPath="${SHADOWSOCKS_RUST_BIN_PATH}"
-        ssPid=`ps -ef | grep -v grep | grep ssserver | awk '{print $2}'`
+        ssPid=`ps -ef | grep -v grep | grep $SHADOWSOCKS_RUST_BIN_PATH | awk '{print $2}'`
     elif [ -e "${GO_SHADOWSOCKS2_BIN_PATH}" ]; then
         ssName="Go-shadowsocks2"
         ssPath="${GO_SHADOWSOCKS2_BIN_PATH}"
-        ssPid=`ps -ef | grep -v grep | grep go-shadowsocks2 | awk '{print $2}'`
+        ssPid=`ps -ef | grep -v grep | grep $GO_SHADOWSOCKS2_BIN_PATH | awk '{print $2}'`
     fi
 
     if [ -e "${V2RAY_PLUGIN_BIN_PATH}" ]; then
@@ -614,6 +614,21 @@ check_script_update(){
     fi
 }
 
+url_encode() {
+    local length="${#1}"
+    for (( i = 0; i < length; i++ )); do
+        local c="${1:i:1}"
+        case $c in
+            [a-zA-Z0-9.~_-])
+                printf "%s" "$c"
+                ;;
+            *)
+                printf "%%%02X" "'$c"
+                ;;
+        esac
+    done
+}
+
 get_ip(){
     local IP=$( ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1 )
     [ -z "${IP}" ] && IP=$( wget -qO- -t1 -T2 ipv4.icanhazip.com )
@@ -654,10 +669,6 @@ get_domain_ip(){
     else
         return 1
     fi
-}
-
-get_str_replace(){
-    echo -n $1 | sed 's/:/%3A/g;s/;/%3B/g;s/=/%3D/g;s/\//%2F/g'
 }
 
 get_str_base64_encode(){
@@ -1352,6 +1363,8 @@ install_step_all(){
     install_status
     disable_selinux
     install_prepare
+    TEMP_DIR_PATH=$(mktemp -d)
+    trap "rm -rf $TEMP_DIR_PATH; exit" 2
     improt_package "utils" "dependencies.sh"
     install_dependencies_logic
     improt_package "utils" "downloads.sh"
@@ -1377,37 +1390,7 @@ install_step_all(){
 
 install_cleanup(){
     cd "${CUR_DIR}"
-    # ss-libev
-    rm -rf "${LIBSODIUM_FILE}" "${LIBSODIUM_FILE}.tar.gz"
-    rm -rf "${MBEDTLS_FILE}" "${MBEDTLS_FILE}.tar.gz"
-    rm -rf "${shadowsocks_libev_file}" "${shadowsocks_libev_file}.tar.gz"
-    
-    # ss-rust
-    rm -rf "${shadowsocks_rust_file}.tar.xz"
-    
-    # v2ray-plugin
-    rm -rf "${v2ray_plugin_file}.tar.gz"
-    
-    # kcptun
-    rm -rf "client_linux_${ARCH}" "${kcptun_file}.tar.gz"
-    
-    # simple-obfs
-    rm -rf simple-obfs
-    
-    # mos-tls-tunnel
-    rm -rf "${mtt_file}.zip" LICENSE README.md mtt-client
-
-    #simple-tls
-    rm -rf "${simple_tls_file}.zip" LICENSE  README.md README_zh.md README_en.md
-
-    # gost-plugin
-    rm -rf "${gost_plugin_file}.zip"
-
-    # xray-plugin
-    rm -rf "${xray_plugin_file}.tar.gz"
-
-    # qtun
-    rm -rf qtun-client "${qtun_file}.tar.xz"
+    rm -rf  ${TEMP_DIR_PATH}
 }
 
 do_uid(){
